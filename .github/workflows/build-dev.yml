@@ -1,9 +1,10 @@
-name: build
+name: build dev
 
 on:
   push:
     branches:
-      - main
+      - dev
+      - dev-*
 
 jobs:
   build:
@@ -11,26 +12,24 @@ jobs:
     strategy:
       matrix:
         python:
-          - version: '2.7.18'
-            tags: 2,2.7
-            suffix: msi
-          - version: '3.7.13'
-            tags: 3.7
-            suffix: exe
-          - version: '3.10.3'
-            tags: latest,3,3.10
-            suffix: exe
+         - version: '2.7.18'
+           tags: 2
+           suffix: msi
+         - version: '3.10.3'
+           tags: 3
+           suffix: exe
         arch:
-        - install_extra: wine64
-          suffix: amd64
-        - tag_suffix: "-32"
+         - install_extra: wine64
+           tag_suffix: "-${{ github.ref_name }}"
+           suffix: amd64
+         - tag_suffix: "-${{ github.ref_name }}-32"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Expand options
-        run: ./expand.py "${{ matrix.python.version }},${{ matrix.python.tags }}" "${{ matrix.arch.tag_suffix }}" "${{ matrix.python.suffix }}" "${{ matrix.arch.suffix }}"
+        run: ./expand.py "${{ matrix.python.tags }}" "${{ matrix.arch.tag_suffix }}" "${{ matrix.python.suffix }}" "${{ matrix.arch.suffix }}"
         id: expand-options
       - name: Show options
         run: |
