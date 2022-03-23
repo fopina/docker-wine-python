@@ -13,30 +13,35 @@ jobs:
         python:
           - version: '2.7.18'
             tags: 2,2.7
-          # FIXME: py3 installers!
-          #  - version: '3.7.13'
-          #    tags: 3.7
-          #  - version: '3.9.9'
-          #    tags: latest,3,3.9
+            suffix: msi
+          - version: '3.7.13'
+            tags: 3.7
+            suffix: exe
+          - version: '3.10.3'
+            tags: latest,3,3.10
+            suffix: exe
         arch:
-        - arch: .amd64
-          install_extra: wine64
-        - suffix: "-32"
+        - install_extra: wine64
+          suffix: amd64
+        - tag_suffix: "-32"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Expand options
+        run: ./expand.py "${{ matrix.python.version }},${{ matrix.python.tags }}" "${{ matrix.arch.tag_suffix }}" "${{ matrix.python.suffix }}" "${{ matrix.arch.suffix }}"
+        id: expand-options
+      - name: Show options
+        run: |
+          echo "Full tags ${{ steps.expand-options.outputs.full_tags }}"
+          echo "Suffix ${{ steps.expand-options.outputs.python_suffix }}"
+
       - name: Login to GHCR
         uses: docker/login-action@v1 
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Expand options
-        run: ./expand.py "${{ matrix.python.version }},${{ matrix.python.tags }}" "${{ matrix.arch.suffix }}"
-        id: expand-options
-      - name: Get color
-        run: |
-          echo "The selected color is ${{ steps.expand-options.outputs.full_tags }}"
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -46,5 +51,5 @@ jobs:
           tags: "${{ steps.expand-options.outputs.full_tags }}"
           build-args: |
             PYTHON_VERSION=${{ matrix.python.version }}
-            PYTHON_ARCH=${{ matrix.arch.arch }}
+            PYTHON_SUFFIX=${{ steps.expand-options.outputs.python_suffix }}
             INSTALL_EXTRA=${{ matrix.arch.install_extra }}
