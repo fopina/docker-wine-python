@@ -1,9 +1,10 @@
-name: build
+name: build dev
 
 on:
   push:
     branches:
-      - main
+      - dev
+      - dev-*
 
 jobs:
   build:
@@ -11,17 +12,18 @@ jobs:
     strategy:
       matrix:
         python:
-          - version: '2.7.18'
-            tags: 2,2.7
-          # FIXME: py3 installers!
-          #  - version: '3.7.13'
-          #    tags: 3.7
-          #  - version: '3.9.9'
-          #    tags: latest,3,3.9
+         - version: '2.7.18'
+           tags: 2
+        # FIXME: py3 installers!
+        #  - version: '3.7.13'
+        #    tags: 3.7
+        #  - version: '3.9.9'
+        #    tags: latest,3,3.9
         arch:
-        - arch: .amd64
-          install_extra: wine64
-        - suffix: "-32"
+         - arch: .amd64
+           install_extra: wine64
+           suffix: "-${{ github.ref_name }}"
+         - suffix: "-${{ github.ref_name }}-32"
 
     steps:
       - name: Checkout
