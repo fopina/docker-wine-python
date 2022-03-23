@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+         - version: '2.7.18'
+           tags: 2,2.7
+        # FIXME: py3 installers!
+        #  - version: '3.7.13'
+        #    tags: 3.7
+        #  - version: '3.9.9'
+        #    tags: latest,3,3.9
+        dockerfile:
+         - name: Dockerfile
+         - name: Dockerfile.py32
+           suffix: '-32'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to GHCR
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Expand options
+        run: ./expand.py "${{ matrix.python.version }},${{ matrix.python.tags }}" "${{ matrix.dockerfile.suffix }}"
+        id: expand-options
+      - name: Get color
+        run: |
+          echo "The selected color is ${{ steps.expand-options.outputs.full_tags }}"
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: "${{ matrix.dockerfile.file }}"
+          tags: "${{ steps.expand-options.outputs.full_tags }}"
+          build-args: "PYTHON_VERSION=${{ matrix.python.version }}"
